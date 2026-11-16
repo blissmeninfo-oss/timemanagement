@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos Executive — Time Management & Productivity Suite</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        slate: {
+                            850: '#151e2e',
+                            950: '#090d16',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for crisp executive feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.5);
+        }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .animate-pulse-ring {
+            animation: pulse-ring 2.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white transition-colors duration-200">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Main App Layout -->
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- Left Sidebar Navigation (Desktop) -->
+        <aside id="sidebar" class="hidden md:flex md:w-64 lg:w-72 flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-200 z-30">
+            <!-- Brand Logo -->
+            <div class="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white shadow-md shadow-brand-600/20">
+                        <i class="ph-bold ph-hourglass-high text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold tracking-tight text-base block leading-none">CHRONOS</span>
+                        <span class="text-[10px] font-semibold tracking-widest uppercase text-slate-400 dark:text-slate-500">Executive OS</span>
+                    </div>
+                </div>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">PRO</span>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+                <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Workspace</p>
+
+                <button onclick="switchView('overview')" data-nav="overview" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400">
+                    <i class="ph-fill ph-squares-four text-lg"></i>
+                    <span>Dashboard Overview</span>
+                </button>
+
+                <button onclick="switchView('schedule')" data-nav="schedule" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all">
+                    <i class="ph ph-calendar-check text-lg"></i>
+                    <span>Daily Time-Blocker</span>
+                    <span id="nav-blocks-count" class="ml-auto text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">0</span>
+                </button>
+
+                <button onclick="switchView('matrix')" data-nav="matrix" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all">
+                    <i class="ph ph-grid-four text-lg"></i>
+                    <span>Eisenhower Matrix</span>
+                    <span id="nav-tasks-count" class="ml-auto text-xs font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">0</span>
+                </button>
+
+                <button onclick="switchView('timer')" data-nav="timer" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all">
+                    <i class="ph ph-timer text-lg"></i>
+                    <span>Deep Work Timer</span>
+                    <span id="sidebar-timer-badge" class="hidden ml-auto text-[11px] font-mono bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md animate-pulse">LIVE</span>
+                </button>
+
+                <button onclick="switchView('analytics')" data-nav="analytics" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all">
+                    <i class="ph ph-chart-line-up text-lg"></i>
+                    <span>Weekly Analytics</span>
+                </button>
+
+                <div class="pt-6">
+                    <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Executive Controls</p>
+                    <button onclick="resetDemoData()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all">
+                        <i class="ph ph-arrow-counter-clockwise text-lg"></i>
+                        <span>Reset Sample Data</span>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Executive Profile & Theme Toggle -->
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-400 text-white font-semibold text-sm flex items-center justify-center shadow-sm">
+                        AV
+                    </div>
+                    <div class="leading-tight">
+                        <p class="text-sm font-semibold">Alex Vance</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">VP of Product Strategy</p>
+                    </div>
+                </div>
+                <button id="theme-toggle" onclick="toggleTheme()" title="Toggle Theme" class="p-2 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i id="theme-icon" class="ph ph-moon text-lg"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Mobile Slide-Over Sidebar -->
+        <div id="mobile-drawer" class="fixed inset-0 z-50 hidden md:hidden">
+            <div onclick="toggleMobileMenu()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+            <div class="relative w-72 max-w-[80vw] h-full bg-white dark:bg-slate-900 flex flex-col justify-between p-5 shadow-2xl">
+                <div>
+                    <div class="flex items-center justify-between pb-5 border-b border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white">
+                                <i class="ph-bold ph-hourglass-high text-lg"></i>
+                            </div>
+                            <span class="font-bold tracking-tight">CHRONOS</span>
+                        </div>
+                        <button onclick="toggleMobileMenu()" class="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white">
+                            <i class="ph ph-x text-xl"></i>
+                        </button>
+                    </div>
+                    <nav class="mt-6 space-y-2">
+                        <button onclick="switchView('overview'); toggleMobileMenu()" data-nav="overview" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400">
+                            <i class="ph-fill ph-squares-four text-lg"></i> Dashboard Overview
+                        </button>
+                        <button onclick="switchView('schedule'); toggleMobileMenu()" data-nav="schedule" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400">
+                            <i class="ph ph-calendar-check text-lg"></i> Daily Time-Blocker
+                        </button>
+                        <button onclick="switchView('matrix'); toggleMobileMenu()" data-nav="matrix" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400">
+                            <i class="ph ph-grid-four text-lg"></i> Eisenhower Matrix
+                        </button>
+                        <button onclick="switchView('timer'); toggleMobileMenu()" data-nav="timer" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400">
+                            <i class="ph ph-timer text-lg"></i> Deep Work Timer
+                        </button>
+                        <button onclick="switchView('analytics'); toggleMobileMenu()" data-nav="analytics" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400">
+                            <i class="ph ph-chart-line-up text-lg"></i> Weekly Analytics
+                        </button>
+                    </nav>
+                </div>
+                <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <button onclick="resetDemoData(); toggleMobileMenu()" class="text-xs text-slate-500 hover:text-brand-600 flex items-center gap-1.5">
+                        <i class="ph ph-arrow-counter-clockwise"></i> Reset Sample Data
+                    </button>
+                    <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
+                        <i class="ph ph-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Workspace Column -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+            <!-- Top Executive Header Bar -->
+            <header class="bg-white/90 dark:bg-slate-900/90 glass-panel border-b border-slate-200 dark:border-slate-800 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 z-20">
+                <!-- Left: Mobile Hamburger + Date/Time -->
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <i class="ph ph-list text-xl"></i>
+                    </button>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 id="header-date" class="text-sm sm:text-base font-semibold tracking-tight text-slate-900 dark:text-white">Monday, Nov 16</h1>
+                            <span class="hidden sm:inline-block text-slate-300 dark:text-slate-700">•</span>
+                            <span id="header-clock" class="text-xs sm:text-sm font-mono text-slate-500 dark:text-slate-400">01:29 PM</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">High-leverage execution mode</p>
+                    </div>
+                </div>
+
+                <!-- Center: Daily North Star Goal Input -->
+                <div class="order-3 lg:order-2 w-full lg:w-auto lg:flex-1 lg:max-w-md">
+                    <div class="relative flex items-center bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-brand-500/40 focus-within:border-brand-500 transition-all">
+                        <i class="ph-fill ph-target text-brand-600 dark:text-brand-400 text-base mr-2 shrink-0"></i>
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mr-2 shrink-0 hidden sm:inline">North Star:</span>
+                        <input id="daily-goal-input" type="text" placeholder="Set today's #1 executive priority..."
+                            class="w-full bg-transparent text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Right: Deep Work Status Toggle + Add Task CTA -->
+                <div class="order-2 lg:order-3 flex items-center gap-2.5 sm:gap-3">
+                    <!-- Deep Work Status Pill -->
+                    <button id="deep-work-toggle" onclick="toggleDeepWorkStatus()"
+                        class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300">
+                        <span id="dw-indicator" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                        <span id="dw-label" class="hidden sm:inline">Available</span>
+                        <span class="sm:hidden">Status</span>
+                    </button>
+
+                    <!-- Primary CTA: Quick Add Task -->
+                    <button onclick="openTaskModal()"
+                        class="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white shadow-sm shadow-brand-600/25 transition-all">
+                        <i class="ph-bold ph-plus text-sm"></i>
+                        <span>Add Task</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Deep Work Active Banner (Visible when Deep Work Status is ON) -->
+            <div id="deep-work-banner" class="hidden bg-indigo-950 text-indigo-100 px-4 sm:px-8 py-2 text-xs flex items-center justify-between border-b border-indigo-800/60">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span class="font-semibold tracking-wide uppercase text-emerald-400">Deep Work Shield Active</span>
+                    <span class="hidden sm:inline text-indigo-300">— Non-essential notifications muted. Protect your maker block.</span>
+                </div>
+                <button onclick="toggleDeepWorkStatus()" class="text-indigo-300 hover:text-white underline font-medium">End Session</button>
+            </div>
+
+            <!-- Scrollable Content Canvas -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+                <!-- VIEW 1: DASHBOARD OVERVIEW (Default View) -->
+                <div id="view-overview" class="space-y-6">
+
+                    <!-- KPI Summary Cards Row -->
+                    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+                        <!-- KPI 1: Deep Work Hours Logged -->
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deep Work Today</span>
+                                <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                    <i class="ph-fill ph-brain text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline gap-2">
+                                <span id="kpi-deep-hours" class="text-2xl sm:text-3xl font-bold font-mono tracking-tight">3.5h</span>
+                                <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full">/ 4.0h target</span>
+                            </div>
+                            <div class="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div id="kpi-deep-bar" class="bg-brand-600 h-full rounded-full transition-all duration-500" style="width: 87%"></div>
+                            </div>
+                        </div>
+
+                        <!-- KPI 2: Task Completion Rate -->
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Execution Rate</span>
+                                <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                    <i class="ph-fill ph-check-circle text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline gap-2">
+                                <span id="kpi-completion-rate" class="text-2xl sm:text-3xl font-bold font-mono tracking-tight">0%</span>
+                                <span id="kpi-completion-sub" class="text-xs text-slate-500 dark:text-slate-400">0 of 0 completed</span>
+                            </div>
+                            <div class="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div id="kpi-completion-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- KPI 3: Maker vs Meeting Ratio -->
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Maker vs. Meeting</span>
+                                <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                    <i class="ph-fill ph-scales text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline gap-2">
+                                <span id="kpi-maker-ratio" class="text-2xl sm:text-3xl font-bold font-mono tracking-tight">68%</span>
+                                <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Maker Time</span>
+                            </div>
+                            <p id="kpi-maker-detail" class="mt-3 text-xs text-slate-500 dark:text-slate-400">4.5h Maker • 2.0h Meetings</p>
+                        </div>
+
+                        <!-- KPI 4: Focus Streak -->
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Focus Streak</span>
+                                <div class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                                    <i class="ph-fill ph-fire text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-baseline gap-2">
+                                <span id="kpi-streak" class="text-2xl sm:text-3xl font-bold font-mono tracking-tight">12 Days</span>
+                                <span class="text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full">Personal Best</span>
+                            </div>
+                            <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">Consistent ≥2h daily deep work</p>
+                        </div>
+                    </section>
+
+                    <!-- Primary Executive Grid: Left (Time-Blocker + Matrix) | Right (Focus Timer + Brain Dump + Chart) -->
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+                        <!-- Left 7 Columns: Daily Time-Blocking Schedule & Eisenhower Matrix -->
+                        <div class="xl:col-span-7 space-y-6">
+
+                            <!-- Daily Time-Blocking Schedule Widget -->
+                            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+                                <div class="px-5 py-4 border-b border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <h2 class="text-base font-bold tracking-tight flex items-center gap-2">
+                                            <i class="ph-fill ph-calendar-blank text-brand-600 dark:text-brand-400"></i>
+                                            Daily Time-Blocking Schedule
+                                        </h2>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Click any hour slot to schedule a focused block</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Deep Work
+                                        </span>
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Meetings
+                                        </span>
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Admin
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Timeline Container -->
+                                <div id="overview-timeline" class="divide-y divide-slate-100 dark:divide-slate-800/80 max-h-[460px] overflow-y-auto">
+                                    <!-- Populated via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Eisenhower Matrix Summary / Interactive Card -->
+                            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+                                <div class="px-5 py-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
+                                    <div>
+                                        <h2 class="text-base font-bold tracking-tight flex items-center gap-2">
+                                            <i class="ph-fill ph-grid-four text-brand-600 dark:text-brand-400"></i>
+                                            Eisenhower Priority Matrix
+                                        </h2>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Triage tasks by urgency & strategic leverage</p>
+                                    </div>
+                                    <button onclick="openTaskModal()" class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1">
+                                        <i class="ph-bold ph-plus"></i> New Item
+                                    </button>
+                                </div>
+
+                                <div id="overview-matrix-grid" class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- 4 Quadrants Rendered Here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right 5 Columns: Deep Work Focus Timer, Brain Dump Inbox, Weekly Productivity Chart -->
+                        <div class="xl:col-span-5 space-y-6">
+
+                            <!-- Deep Work Focus Timer Widget -->
+                            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-5">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h2 class="text-base font-bold tracking-tight flex items-center gap-2">
+                                            <i class="ph-fill ph-timer text-brand-600 dark:text-brand-400"></i>
+                                            Deep Work Focus Timer
+                                        </h2>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Deliberate single-task execution</p>
+                                    </div>
+                                    <!-- Interval Presets -->
+                                    <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs font-medium">
+                                        <button onclick="setTimerPreset(25, 'Pomodoro')" data-preset="25" class="timer-preset-btn px-2.5 py-1 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition-all">25m</button>
+                                        <button onclick="setTimerPreset(50, 'Deep Work')" data-preset="50" class="timer-preset-btn px-2.5 py-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">50m</button>
+                                        <button onclick="setTimerPreset(10, 'Recovery Break')" data-preset="10" class="timer-preset-btn px-2.5 py-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">10m</button>
+                                    </div>
+                                </div>
+
+                                <!-- Active Task Selector -->
+                                <div class="mb-5">
+                                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Active Focus Target</label>
+                                    <select id="timer-task-select" class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                        <!-- Populated dynamically with incomplete tasks -->
+                                    </select>
+                                </div>
+
+                                <!-- Circular / Digital Timer Display -->
+                                <div class="relative flex flex-col items-center justify-center py-6 bg-slate-50/80 dark:bg-slate-950/60 rounded-2xl border border-slate-100 dark:border-slate-800/80 mb-5">
+                                    <span id="timer-mode-badge" class="text-[11px] font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400 mb-1">Pomodoro Sprint</span>
+                                    <div id="timer-display" class="text-5xl sm:text-6xl font-bold font-mono tracking-tight text-slate-900 dark:text-white tabular-nums">
+                                        25:00
+                                    </div>
+                                    <!-- Progress Bar -->
+                                    <div class="w-48 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mt-4 overflow-hidden">
+                                        <div id="timer-progress-bar" class="h-full bg-brand-600 transition-all duration-500" style="width: 100%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Timer Controls -->
+                                <div class="grid grid-cols-3 gap-2.5">
+                                    <button id="timer-start-btn" onclick="toggleTimer()" class="col-span-2 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-sm shadow-brand-600/20 transition-all">
+                                        <i id="timer-start-icon" class="ph-fill ph-play text-base"></i>
+                                        <span id="timer-start-text">Start Focus</span>
+                                    </button>
+                                    <button onclick="resetTimer()" class="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-sm transition-all">
+                                        <i class="ph ph-arrow-counter-clockwise text-base"></i>
+                                        <span>Reset</span>
+                                    </button>
+                                </div>
+
+                                <!-- Recent Session Log -->
+                                <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Completed Sessions Today</span>
+                                        <button onclick="completeTimerSession(true)" class="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:underline">+ Log Session</button>
+                                    </div>
+                                    <div id="timer-session-log" class="space-y-1.5 max-h-28 overflow-y-auto text-xs">
+                                        <!-- Session items -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quick Brain Dump / Executive Inbox Pad -->
+                            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-5">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h2 class="text-base font-bold tracking-tight flex items-center gap-2">
+                                            <i class="ph-fill ph-tray text-brand-600 dark:text-brand-400"></i>
+                                            Executive Brain Dump
+                                        </h2>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Capture stray thoughts & triage to Matrix</p>
+                                    </div>
+                                    <span id="inbox-count" class="text-xs font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">0</span>
+                                </div>
+
+                                <!-- Quick Capture Form -->
+                                <form onsubmit="addBrainDumpItem(event)" class="flex gap-2 mb-3">
+                                    <input id="brain-dump-input" type="text" placeholder="Capture thought, follow-up, or idea..."
+                                        class="flex-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                    <button type="submit" class="px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-xs font-semibold transition-colors">
+                                        Capture
+                                    </button>
+                                </form>
+
+                                <!-- Captured Items List -->
+                                <div id="brain-dump-list" class="space-y-2 max-h-44 overflow-y-auto">
+                                    <!-- Populated via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Weekly Energy & Deep Work vs Shallow Work Chart -->
+                            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-5">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h2 class="text-base font-bold tracking-tight flex items-center gap-2">
+                                            <i class="ph-fill ph-chart-bar text-brand-600 dark:text-brand-400"></i>
+                                            Deep vs. Shallow Output
+                                        </h2>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Weekly cognitive allocation (Hours)</p>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-[11px] font-medium">
+                                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-brand-600"></span> Deep</span>
+                                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-slate-300 dark:bg-slate-700"></span> Shallow</span>
+                                    </div>
+                                </div>
+                                <div id="overview-chart-container" class="pt-2">
+                                    <!-- SVG Chart Rendered Here -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: DEDICATED DAILY TIME-BLOCKER -->
+                <div id="view-schedule" class="hidden space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold tracking-tight">Daily Time-Blocking Architecture</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Assign every hour a clear intention between 8:00 AM and 7:00 PM.</p>
+                        </div>
+                        <button onclick="openBlockModal()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold flex items-center gap-2 shadow-sm">
+                            <i class="ph-bold ph-plus"></i> Schedule Time Block
+                        </button>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <div id="full-timeline" class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <!-- Full height schedule -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: DEDICATED EISENHOWER PRIORITY MATRIX -->
+                <div id="view-matrix" class="hidden space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold tracking-tight">Eisenhower Decision Matrix</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Ruthlessly prioritize high-leverage work; delegate or eliminate noise.</p>
+                        </div>
+                        <button onclick="openTaskModal()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold flex items-center gap-2 shadow-sm">
+                            <i class="ph-bold ph-plus"></i> Add Strategic Task
+                        </button>
+                    </div>
+
+                    <div id="full-matrix-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Full 4 Quadrants -->
+                    </div>
+                </div>
+
+                <!-- VIEW 4: DEDICATED DEEP WORK STUDIO -->
+                <div id="view-timer" class="hidden max-w-2xl mx-auto space-y-6 py-4">
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg p-8 text-center">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 mb-4">
+                            <i class="ph-fill ph-sparkle"></i> Distraction-Free Focus Chamber
+                        </span>
+                        <h2 id="studio-timer-mode" class="text-lg font-semibold text-slate-600 dark:text-slate-300">Pomodoro Sprint</h2>
+                        <div id="studio-timer-display" class="text-7xl sm:text-8xl font-bold font-mono tracking-tight my-6 text-slate-900 dark:text-white tabular-nums">
+                            25:00
+                        </div>
+                        <div class="max-w-md mx-auto mb-6">
+                            <select id="studio-task-select" onchange="syncTaskSelectors(this.value)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            </select>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-center gap-3 mb-8">
+                            <button onclick="setTimerPreset(25, 'Pomodoro')" class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">25m Pomodoro</button>
+                            <button onclick="setTimerPreset(50, 'Deep Work')" class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">50m Deep Work</button>
+                            <button onclick="setTimerPreset(90, 'Ultradian Sprint')" class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">90m Ultradian</button>
+                            <button onclick="setTimerPreset(10, 'Recovery Break')" class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">10m Break</button>
+                        </div>
+                        <div class="flex items-center justify-center gap-4">
+                            <button onclick="toggleTimer()" class="px-8 py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-base shadow-md shadow-brand-600/25 flex items-center gap-2">
+                                <i id="studio-start-icon" class="ph-fill ph-play"></i>
+                                <span id="studio-start-text">Start Focus</span>
+                            </button>
+                            <button onclick="resetTimer()" class="px-6 py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold text-base">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 5: DEDICATED WEEKLY ANALYTICS -->
+                <div id="view-analytics" class="hidden space-y-6">
+                    <div>
+                        <h2 class="text-xl font-bold tracking-tight">Executive Productivity & Energy Analytics</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Audit how your time aligns with strategic priorities.</p>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                            <h3 class="text-base font-bold mb-1">Weekly Deep Work vs. Shallow Work</h3>
+                            <p class="text-xs text-slate-500 mb-6">Target: ≥ 20 hours of uninterrupted maker work per week</p>
+                            <div id="analytics-full-chart"></div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
+                            <h3 class="text-base font-bold">Time Allocation Breakdown (Today)</h3>
+                            <div id="analytics-breakdown" class="space-y-4"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL 1: ADD / EDIT TASK MODAL -->
+    <div id="task-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                <h3 class="text-base font-bold">Add Strategic Task</h3>
+                <button onclick="closeTaskModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            <form onsubmit="saveNewTask(event)" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Task Title</label>
+                    <input id="modal-task-title" type="text" required placeholder="e.g., Finalize Q4 Board Deck"
+                        class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Eisenhower Quadrant</label>
+                    <select id="modal-task-quadrant" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="do">Q1: Do First (Urgent & Important)</option>
+                        <option value="schedule">Q2: Schedule (Important, Not Urgent)</option>
+                        <option value="delegate">Q3: Delegate (Urgent, Not Important)</option>
+                        <option value="eliminate">Q4: Eliminate (Neither)</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Est. Duration</label>
+                        <select id="modal-task-duration" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="30m">30 mins</option>
+                            <option value="1h" selected>1 hour</option>
+                            <option value="1.5h">1.5 hours</option>
+                            <option value="2h">2 hours</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Category Tag</label>
+                        <select id="modal-task-tag" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="Strategy">Strategy</option>
+                            <option value="Client">Client</option>
+                            <option value="Leadership">Leadership</option>
+                            <option value="Operations">Operations</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeTaskModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-sm">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: SCHEDULE TIME BLOCK MODAL -->
+    <div id="block-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                <h3 class="text-base font-bold">Assign Time Block</h3>
+                <button onclick="closeBlockModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            <form onsubmit="saveTimeBlock(event)" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Hour Slot</label>
+                    <select id="modal-block-hour" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <!-- Populated with 8 AM - 7 PM -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Block Activity / Focus</label>
+                    <input id="modal-block-title" type="text" required placeholder="e.g., Q4 Pipeline Strategy Review"
+                        class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Block Type</label>
+                        <select id="modal-block-type" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="deep">Deep Work</option>
+                            <option value="meeting">Client / Team Meeting</option>
+                            <option value="admin">Admin / Comms</option>
+                            <option value="break">Recovery / Break</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Duration</label>
+                        <select id="modal-block-duration" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="30m">30 mins</option>
+                            <option value="45m">45 mins</option>
+                            <option value="60m" selected>60 mins</option>
+                            <option value="90m">90 mins</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-between items-center">
+                    <button type="button" id="delete-block-btn" onclick="deleteCurrentBlock()" class="hidden px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10">Clear Slot</button>
+                    <div class="flex gap-2 ml-auto">
+                        <button type="button" onclick="closeBlockModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                        <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-sm">Save Block</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * CHRONOS EXECUTIVE — APPLICATION STATE & PERSISTENCE
+         */
+        const STORAGE_KEY = 'chronos_executive_state_v1';
+
+        const DEFAULT_STATE = {
+            theme: 'light',
+            dailyGoal: 'Finalize Q4 Enterprise Product Roadmap & Sign Off Budget',
+            deepWorkStatus: false,
+            streak: 12,
+            tasks: [
+                { id: 't1', title: 'Q4 Pipeline Strategy Review', quadrant: 'do', duration: '1.5h', tag: 'Strategy', completed: false },
+                { id: 't2', title: 'Enterprise Client Proposal & Deck', quadrant: 'do', duration: '2h', tag: 'Client', completed: true },
+                { id: 't3', title: '2027 Engineering Hiring Plan', quadrant: 'schedule', duration: '1h', tag: 'Leadership', completed: false },
+                { id: 't4', title: 'Executive Leadership Offsite Agenda', quadrant: 'schedule', duration: '1h', tag: 'Strategy', completed: false },
+                { id: 't5', title: 'Approve Vendor SaaS Renewals', quadrant: 'delegate', duration: '30m', tag: 'Operations', completed: false },
+                { id: 't6', title: 'Weekly KPI Metrics Formatting', quadrant: 'delegate', duration: '30m', tag: 'Operations', completed: true },
+                { id: 't7', title: 'Unstructured Industry Newsletter Audit', quadrant: 'eliminate', duration: '30m', tag: 'Operations', completed: false }
+            ],
+            timeBlocks: {
+                8: { title: 'Morning Planning & Inbox Zero Triage', type: 'admin', duration: '45m' },
+                9: { title: 'Deep Work: Q4 Pipeline Strategy Review', type: 'deep', duration: '60m' },
+                10: { title: 'Deep Work: Enterprise Client Proposal & Deck', type: 'deep', duration: '60m' },
+                11: { title: 'Executive Product Leadership Standup', type: 'meeting', duration: '45m' },
+                12: { title: 'Executive Lunch & Walk (No Screens)', type: 'break', duration: '60m' },
+                14: { title: 'Client Steering Committee Sync', type: 'meeting', duration: '60m' },
+                15: { title: 'Deep Work: 2027 Engineering Hiring Plan', type: 'deep', duration: '60m' },
+                17: { title: 'Async Comms & End-of-Day Shutdown Ritual', type: 'admin', duration: '30m' }
+            },
+            brainDump: [
+                { id: 'b1', text: 'Follow up with Sarah on EMEA legal review', createdAt: '10:15 AM' },
+                { id: 'b2', text: 'Prepare talking points for Friday All-Hands', createdAt: '11:40 AM' },
+                { id: 'b3', text: 'Review Q3 customer churn cohort report', createdAt: '01:05 PM' }
+            ],
+            sessionLogs: [
+                { id: 's1', task: 'Enterprise Client Proposal & Deck', duration: 50, mode: 'Deep Work', time: '10:50 AM' },
+                { id: 's2', task: 'Q4 Pipeline Strategy Review', duration: 25, mode: 'Pomodoro', time: '09:30 AM' }
+            ],
+            weeklyAnalytics: [
+                { day: 'Mon', deep: 4.5, shallow: 2.5 },
+                { day: 'Tue', deep: 5.0, shallow: 2.0 },
+                { day: 'Wed', deep: 3.5, shallow: 3.5 },
+                { day: 'Thu', deep: 4.8, shallow: 2.2 },
+                { day: 'Fri', deep: 4.0, shallow: 2.0 },
+                { day: 'Sat', deep: 1.5, shallow: 0.5 },
+                { day: 'Sun', deep: 1.0, shallow: 0.5 }
+            ]
+        };
+
+        let appState = loadState();
+
+        // Timer Runtime State
+        let timerInterval = null;
+        let timerDurationSec = 25 * 60;
+        let timerRemainingSec = 25 * 60;
+        let timerMode = 'Pomodoro';
+        let timerRunning = false;
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    return { ...DEFAULT_STATE, ...JSON.parse(raw) };
+                }
+            } catch (e) {
+                console.error('Error loading localStorage:', e);
+            }
+            return JSON.parse(JSON.stringify(DEFAULT_STATE));
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                console.error('Error saving localStorage:', e);
+            }
+            refreshAllUI();
+        }
+
+        function resetDemoData() {
+            appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            saveState();
+            showToast('Sample executive data restored.', 'info');
+        }
+
+        /**
+         * INITIALIZATION & CLOCK
+         */
+        window.addEventListener('DOMContentLoaded', () => {
+            applyTheme(appState.theme);
+            initGoalInput();
+            populateHourSelect();
+            updateClock();
+            setInterval(updateClock, 1000);
+            refreshAllUI();
+        });
+
+        function updateClock() {
+            const now = new Date();
+            const dateOptions = { weekday: 'long', month: 'short', day: 'numeric' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit' };
+            document.getElementById('header-date').textContent = now.toLocaleDateString('en-US', dateOptions);
+            document.getElementById('header-clock').textContent = now.toLocaleTimeString('en-US', timeOptions);
+        }
+
+        function initGoalInput() {
+            const goalInput = document.getElementById('daily-goal-input');
+            goalInput.value = appState.dailyGoal || '';
+            goalInput.addEventListener('input', (e) => {
+                appState.dailyGoal = e.target.value;
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                } catch (err) {}
+            });
+        }
+
+        /**
+         * THEME & NAVIGATION
+         */
+        function toggleTheme() {
+            appState.theme = appState.theme === 'dark' ? 'light' : 'dark';
+            applyTheme(appState.theme);
+            saveState();
+        }
+
+        function applyTheme(theme) {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (theme === 'dark') {
+                html.classList.add('dark');
+                if (icon) icon.className = 'ph ph-sun text-lg text-amber-400';
+            } else {
+                html.classList.remove('dark');
+                if (icon) icon.className = 'ph ph-moon text-lg';
+            }
+        }
+
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            drawer.classList.toggle('hidden');
+        }
+
+        function switchView(viewName) {
+            const views = ['overview', 'schedule', 'matrix', 'timer', 'analytics'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.classList.toggle('hidden', v !== viewName);
+            });
+
+            // Update sidebar active states
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const isActive = btn.getAttribute('data-nav') === viewName;
+                if (isActive) {
+                    btn.className = 'nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400';
+                } else {
+                    btn.className = 'nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all';
+                }
+            });
+        }
+
+        /**
+         * DEEP WORK STATUS TOGGLE
+         */
+        function toggleDeepWorkStatus() {
+            appState.deepWorkStatus = !appState.deepWorkStatus;
+            saveState();
+            if (appState.deepWorkStatus) {
+                showToast('Deep Work Shield activated. Distractions muted.', 'success');
+            } else {
+                showToast('Status set to Available.', 'info');
+            }
+        }
+
+        function renderDeepWorkStatus() {
+            const btn = document.getElementById('deep-work-toggle');
+            const dot = document.getElementById('dw-indicator');
+            const label = document.getElementById('dw-label');
+            const banner = document.getElementById('deep-work-banner');
+
+            if (appState.deepWorkStatus) {
+                btn.className = 'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all bg-indigo-950 text-emerald-300 border-indigo-800 shadow-sm';
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                label.textContent = 'In Deep Work';
+                banner.classList.remove('hidden');
+            } else {
+                btn.className = 'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300';
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+                label.textContent = 'Available';
+                banner.classList.add('hidden');
+            }
+        }
+
+        /**
+         * MASTER RENDER REFRESH
+         */
+        function refreshAllUI() {
+            renderDeepWorkStatus();
+            renderKPIs();
+            renderTimelines();
+            renderMatrices();
+            renderBrainDump();
+            renderTimerTaskDropdowns();
+            renderSessionLog();
+            renderCharts();
+            updateNavBadges();
+        }
+
+        function updateNavBadges() {
+            const openTasks = appState.tasks.filter(t => !t.completed).length;
+            const blockCount = Object.keys(appState.timeBlocks).length;
+            document.getElementById('nav-tasks-count').textContent = openTasks;
+            document.getElementById('nav-blocks-count').textContent = blockCount;
+        }
+
+        /**
+         * KPI CALCULATIONS & RENDER
+         */
+        function renderKPIs() {
+            // 1. Deep Work Hours Logged (from timeBlocks of type 'deep' + logged focus sessions)
+            let deepMins = 0;
+            let meetingMins = 0;
+            let adminMins = 0;
+
+            Object.values(appState.timeBlocks).forEach(b => {
+                const mins = parseInt(b.duration) || 60;
+                if (b.type === 'deep') deepMins += mins;
+                else if (b.type === 'meeting') meetingMins += mins;
+                else if (b.type === 'admin') adminMins += mins;
+            });
+
+            const deepHours = (deepMins / 60).toFixed(1);
+            const targetHours = 4.0;
+            const deepPct = Math.min(100, Math.round((deepHours / targetHours) * 100));
+
+            document.getElementById('kpi-deep-hours').textContent = `${deepHours}h`;
+            document.getElementById('kpi-deep-bar').style.width = `${deepPct}%`;
+
+            // 2. Task Completion Rate
+            const totalTasks = appState.tasks.length;
+            const completedTasks = appState.tasks.filter(t => t.completed).length;
+            const compRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            document.getElementById('kpi-completion-rate').textContent = `${compRate}%`;
+            document.getElementById('kpi-completion-sub').textContent = `${completedTasks} of ${totalTasks} completed`;
+            document.getElementById('kpi-completion-bar').style.width = `${compRate}%`;
+
+            // 3. Maker vs Meeting Ratio
+            const totalWorkMins = deepMins + meetingMins + adminMins;
+            const makerRatio = totalWorkMins > 0 ? Math.round((deepMins / totalWorkMins) * 100) : 0;
+            document.getElementById('kpi-maker-ratio').textContent = `${makerRatio}%`;
+            document.getElementById('kpi-maker-detail').textContent = `${(deepMins/60).toFixed(1)}h Maker • ${(meetingMins/60).toFixed(1)}h Meetings`;
+
+            // 4. Streak
+            document.getElementById('kpi-streak').textContent = `${appState.streak} Days`;
+        }
+
+        /**
+         * DAILY TIME-BLOCKING SCHEDULE (8:00 AM - 7:00 PM)
+         */
+        const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+
+        function formatHour(h) {
+            const suffix = h >= 12 ? 'PM' : 'AM';
+            const displayH = h > 12 ? h - 12 : h;
+            return `${displayH.toString().padStart(2, '0')}:00 ${suffix}`;
+        }
+
+        function populateHourSelect() {
+            const select = document.getElementById('modal-block-hour');
+            select.innerHTML = HOURS.map(h => `<option value="${h}">${formatHour(h)}</option>`).join('');
+        }
+
+        function getBlockStyle(type) {
+            switch (type) {
+                case 'deep':
+                    return {
+                        bg: 'bg-indigo-50/90 dark:bg-indigo-950/60 border-l-4 border-indigo-600',
+                        badge: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300',
+                        label: 'Deep Work'
+                    };
+                case 'meeting':
+                    return {
+                        bg: 'bg-amber-50/90 dark:bg-amber-950/40 border-l-4 border-amber-500',
+                        badge: 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300',
+                        label: 'Meeting'
+                    };
+                case 'break':
+                    return {
+                        bg: 'bg-emerald-50/80 dark:bg-emerald-950/40 border-l-4 border-emerald-500',
+                        badge: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
+                        label: 'Recovery'
+                    };
+                default:
+                    return {
+                        bg: 'bg-slate-100/90 dark:bg-slate-800/70 border-l-4 border-slate-400',
+                        badge: 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
+                        label: 'Admin / Comms'
+                    };
+            }
+        }
+
+        function renderTimelines() {
+            const currentHour = new Date().getHours();
+            const html = HOURS.map(h => {
+                const block = appState.timeBlocks[h];
+                const isCurrent = h === currentHour;
+                const timeLabel = formatHour(h);
+
+                if (block) {
+                    const style = getBlockStyle(block.type);
+                    return `
+                        <div onclick="openBlockModal(${h})" class="group flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-colors">
+                            <div class="w-20 shrink-0 flex items-center gap-1.5">
+                                <span class="text-xs font-mono font-medium ${isCurrent ? 'text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400'}">${timeLabel}</span>
+                                ${isCurrent ? '<span class="w-1.5 h-1.5 rounded-full bg-brand-600 animate-ping"></span>' : ''}
+                            </div>
+                            <div class="flex-1 rounded-xl px-3.5 py-2.5 ${style.bg} flex flex-wrap items-center justify-between gap-2 transition-transform group-hover:translate-x-0.5">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100">${escapeHtml(block.title)}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md ${style.badge}">${style.label}</span>
+                                    <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">${block.duration}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div onclick="openBlockModal(${h})" class="group flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition-colors">
+                            <div class="w-20 shrink-0">
+                                <span class="text-xs font-mono ${isCurrent ? 'text-brand-600 font-bold' : 'text-slate-400 dark:text-slate-500'}">${timeLabel}</span>
+                            </div>
+                            <div class="flex-1 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 group-hover:border-brand-400 dark:group-hover:border-brand-500/60 px-3.5 py-2 flex items-center justify-between text-xs text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                                <span>Open Focus Window</span>
+                                <span class="opacity-0 group-hover:opacity-100 font-medium flex items-center gap-1 transition-opacity">
+                                    <i class="ph-bold ph-plus"></i> Assign Block
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            document.getElementById('overview-timeline').innerHTML = html;
+            document.getElementById('full-timeline').innerHTML = html;
+        }
+
+        function openBlockModal(hour = 9) {
+            const modal = document.getElementById('block-modal');
+            const hourSelect = document.getElementById('modal-block-hour');
+            const titleInput = document.getElementById('modal-block-title');
+            const typeSelect = document.getElementById('modal-block-type');
+            const durSelect = document.getElementById('modal-block-duration');
+            const delBtn = document.getElementById('delete-block-btn');
+
+            hourSelect.value = hour;
+            const existing = appState.timeBlocks[hour];
+            if (existing) {
+                titleInput.value = existing.title;
+                typeSelect.value = existing.type;
+                durSelect.value = existing.duration;
+                delBtn.classList.remove('hidden');
+            } else {
+                titleInput.value = '';
+                typeSelect.value = 'deep';
+                durSelect.value = '60m';
+                delBtn.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => titleInput.focus(), 50);
+        }
+
+        function closeBlockModal() {
+            const modal = document.getElementById('block-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveTimeBlock(e) {
+            e.preventDefault();
+            const hour = parseInt(document.getElementById('modal-block-hour').value);
+            const title = document.getElementById('modal-block-title').value.trim();
+            const type = document.getElementById('modal-block-type').value;
+            const duration = document.getElementById('modal-block-duration').value;
+
+            if (!title) return;
+            appState.timeBlocks[hour] = { title, type, duration };
+            saveState();
+            closeBlockModal();
+            showToast(`Scheduled "${title}" at ${formatHour(hour)}`, 'success');
+        }
+
+        function deleteCurrentBlock() {
+            const hour = parseInt(document.getElementById('modal-block-hour').value);
+            delete appState.timeBlocks[hour];
+            saveState();
+            closeBlockModal();
+            showToast(`Cleared ${formatHour(hour)} time slot`, 'info');
+        }
+
+        /**
+         * EISENHOWER PRIORITY MATRIX
+         */
+        const QUADRANTS = [
+            {
+                key: 'do',
+                title: 'Q1: Do First',
+                subtitle: 'Urgent & Important',
+                accent: 'border-rose-500/40 bg-rose-50/40 dark:bg-rose-950/15',
+                badge: 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300',
+                icon: 'ph-fill ph-fire text-rose-500'
+            },
+            {
+                key: 'schedule',
+                title: 'Q2: Schedule',
+                subtitle: 'Important, Not Urgent',
+                accent: 'border-indigo-500/40 bg-indigo-50/40 dark:bg-indigo-950/15',
+                badge: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300',
+                icon: 'ph-fill ph-calendar-plus text-indigo-500'
+            },
+            {
+                key: 'delegate',
+                title: 'Q3: Delegate',
+                subtitle: 'Urgent, Not Important',
+                accent: 'border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/15',
+                badge: 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300',
+                icon: 'ph-fill ph-users text-amber-500'
+            },
+            {
+                key: 'eliminate',
+                title: 'Q4: Eliminate',
+                subtitle: 'Neither Urgent nor Important',
+                accent: 'border-slate-300/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-800/20',
+                badge: 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+                icon: 'ph-fill ph-trash text-slate-400'
+            }
+        ];
+
+        function renderMatrices() {
+            const html = QUADRANTS.map(q => {
+                const qTasks = appState.tasks.filter(t => t.quadrant === q.key);
+                const taskItems = qTasks.length ? qTasks.map(task => `
+                    <div class="group bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-xl p-2.5 shadow-xs flex items-start justify-between gap-2 transition-all hover:border-slate-300 dark:hover:border-slate-700">
+                        <div class="flex items-start gap-2.5 min-w-0">
+                            <button onclick="toggleTaskComplete('${task.id}')" class="mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-brand-500'}">
+                                ${task.completed ? '<i class="ph-bold ph-check text-[10px]"></i>' : ''}
+                            </button>
+                            <div class="min-w-0">
+                                <p class="text-xs font-medium leading-snug ${task.completed ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-100'}">${escapeHtml(task.title)}</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">${task.tag}</span>
+                                    <span class="text-[10px] font-mono text-slate-400">${task.duration}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <select onchange="moveTaskQuadrant('${task.id}', this.value)" title="Move Quadrant" class="text-[10px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1 py-0.5 focus:outline-none">
+                                <option value="do" ${task.quadrant === 'do' ? 'selected' : ''}>Q1</option>
+                                <option value="schedule" ${task.quadrant === 'schedule' ? 'selected' : ''}>Q2</option>
+                                <option value="delegate" ${task.quadrant === 'delegate' ? 'selected' : ''}>Q3</option>
+                                <option value="eliminate" ${task.quadrant === 'eliminate' ? 'selected' : ''}>Q4</option>
+                            </select>
+                            <button onclick="deleteTask('${task.id}')" title="Delete Task" class="p-1 text-slate-400 hover:text-rose-500">
+                                <i class="ph ph-x text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('') : `<p class="text-xs text-slate-400 italic py-4 text-center">No tasks in this quadrant</p>`;
+
+                return `
+                    <div class="rounded-xl border ${q.accent} p-3.5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2.5">
+                                <div class="flex items-center gap-2">
+                                    <i class="${q.icon}"></i>
+                                    <div>
+                                        <h3 class="text-xs font-bold tracking-tight">${q.title}</h3>
+                                        <p class="text-[10px] text-slate-500 dark:text-slate-400">${q.subtitle}</p>
+                                    </div>
+                                </div>
+                                <span class="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full ${q.badge}">${qTasks.length}</span>
+                            </div>
+                            <div class="space-y-2 max-h-56 overflow-y-auto pr-0.5">
+                                ${taskItems}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('overview-matrix-grid').innerHTML = html;
+            document.getElementById('full-matrix-grid').innerHTML = html;
+        }
+
+        function openTaskModal(prefillTitle = '') {
+            const modal = document.getElementById('task-modal');
+            const input = document.getElementById('modal-task-title');
+            input.value = prefillTitle;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function closeTaskModal() {
+            const modal = document.getElementById('task-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveNewTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('modal-task-title').value.trim();
+            const quadrant = document.getElementById('modal-task-quadrant').value;
+            const duration = document.getElementById('modal-task-duration').value;
+            const tag = document.getElementById('modal-task-tag').value;
+
+            if (!title) return;
+
+            appState.tasks.unshift({
+                id: 't_' + Date.now(),
+                title,
+                quadrant,
+                duration,
+                tag,
+                completed: false
+            });
+
+            saveState();
+            closeTaskModal();
+            showToast(`Added "${title}" to Matrix`, 'success');
+        }
+
+        function toggleTaskComplete(id) {
+            const task = appState.tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                saveState();
+                if (task.completed) showToast('Task marked complete!', 'success');
+            }
+        }
+
+        function moveTaskQuadrant(id, newQuadrant) {
+            const task = appState.tasks.find(t => t.id === id);
+            if (task) {
+                task.quadrant = newQuadrant;
+                saveState();
+                showToast(`Moved task to ${newQuadrant.toUpperCase()}`, 'info');
+            }
+        }
+
+        function deleteTask(id) {
+            appState.tasks = appState.tasks.filter(t => t.id !== id);
+            saveState();
+            showToast('Task removed', 'info');
+        }
+
+        /**
+         * DEEP WORK FOCUS TIMER & WEB AUDIO CHIME
+         */
+        function renderTimerTaskDropdowns() {
+            const openTasks = appState.tasks.filter(t => !t.completed);
+            const options = openTasks.length
+                ? openTasks.map(t => `<option value="${escapeHtml(t.title)}">${escapeHtml(t.title)} (${t.duration})</option>`).join('')
+                : `<option value="Unscheduled Deep Work">Unscheduled Deep Work</option>`;
+
+            document.getElementById('timer-task-select').innerHTML = options;
+            document.getElementById('studio-task-select').innerHTML = options;
+        }
+
+        function syncTaskSelectors(val) {
+            document.getElementById('timer-task-select').value = val;
+            document.getElementById('studio-task-select').value = val;
+        }
+
+        function setTimerPreset(minutes, label) {
+            pauseTimer();
+            timerDurationSec = minutes * 60;
+            timerRemainingSec = timerDurationSec;
+            timerMode = label;
+
+            document.getElementById('timer-mode-badge').textContent = `${label} Sprint`;
+            document.getElementById('studio-timer-mode').textContent = `${label} Sprint`;
+
+            // Update preset button active styling
+            document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+                const isMatch = parseInt(btn.getAttribute('data-preset')) === minutes;
+                if (isMatch) {
+                    btn.className = 'timer-preset-btn px-2.5 py-1 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition-all';
+                } else {
+                    btn.className = 'timer-preset-btn px-2.5 py-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all';
+                }
+            });
+
+            updateTimerDisplay();
+        }
+
+        function toggleTimer() {
+            if (timerRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            if (timerRunning) return;
+            timerRunning = true;
+            updateTimerButtons();
+            document.getElementById('sidebar-timer-badge').classList.remove('hidden');
+
+            timerInterval = setInterval(() => {
+                if (timerRemainingSec > 0) {
+                    timerRemainingSec--;
+                    updateTimerDisplay();
+                } else {
+                    completeTimerSession(false);
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            timerRunning = false;
+            clearInterval(timerInterval);
+            updateTimerButtons();
+            document.getElementById('sidebar-timer-badge').classList.add('hidden');
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timerRemainingSec = timerDurationSec;
+            updateTimerDisplay();
+        }
+
+        function updateTimerButtons() {
+            const iconClass = timerRunning ? 'ph-fill ph-pause text-base' : 'ph-fill ph-play text-base';
+            const text = timerRunning ? 'Pause Focus' : 'Start Focus';
+
+            document.getElementById('timer-start-icon').className = iconClass;
+            document.getElementById('timer-start-text').textContent = text;
+            document.getElementById('studio-start-icon').className = iconClass;
+            document.getElementById('studio-start-text').textContent = text;
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerRemainingSec / 60).toString().padStart(2, '0');
+            const secs = (timerRemainingSec % 60).toString().padStart(2, '0');
+            const formatted = `${mins}:${secs}`;
+
+            document.getElementById('timer-display').textContent = formatted;
+            document.getElementById('studio-timer-display').textContent = formatted;
+
+            const pct = Math.max(0, Math.round((timerRemainingSec / timerDurationSec) * 100));
+            document.getElementById('timer-progress-bar').style.width = `${pct}%`;
+        }
+
+        function completeTimerSession(manual = false) {
+            pauseTimer();
+            playCompletionChime();
+
+            const taskTitle = document.getElementById('timer-task-select').value || 'Deep Work Session';
+            const minsLogged = Math.round(timerDurationSec / 60);
+            const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            appState.sessionLogs.unshift({
+                id: 's_' + Date.now(),
+                task: taskTitle,
+                duration: minsLogged,
+                mode: timerMode,
+                time: nowTime
+            });
+
+            timerRemainingSec = timerDurationSec;
+            updateTimerDisplay();
+            saveState();
+
+            showToast(`Session logged: ${minsLogged}m on "${taskTitle}"`, 'success');
+        }
+
+        function renderSessionLog() {
+            const container = document.getElementById('timer-session-log');
+            if (!appState.sessionLogs.length) {
+                container.innerHTML = `<p class="text-slate-400 italic">No sessions logged yet today.</p>`;
+                return;
+            }
+            container.innerHTML = appState.sessionLogs.map(s => `
+                <div class="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60">
+                    <div class="truncate pr-2">
+                        <span class="font-medium text-slate-800 dark:text-slate-200">${escapeHtml(s.task)}</span>
+                        <span class="text-[10px] text-slate-400 ml-1">• ${s.mode}</span>
+                    </div>
+                    <span class="font-mono text-[11px] font-semibold text-brand-600 dark:text-brand-400 shrink-0">${s.duration}m</span>
+                </div>
+            `).join('');
+        }
+
+        function playCompletionChime() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.35); // A5
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.6);
+            } catch (e) {
+                // Audio context blocked or unsupported
+            }
+        }
+
+        /**
+         * BRAIN DUMP / EXECUTIVE INBOX CAPTURE
+         */
+        function addBrainDumpItem(e) {
+            e.preventDefault();
+            const input = document.getElementById('brain-dump-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            appState.brainDump.unshift({
+                id: 'b_' + Date.now(),
+                text,
+                createdAt: timeStr
+            });
+            input.value = '';
+            saveState();
+            showToast('Captured to Inbox', 'info');
+        }
+
+        function promoteBrainDumpToMatrix(id) {
+            const item = appState.brainDump.find(b => b.id === id);
+            if (!item) return;
+
+            appState.tasks.unshift({
+                id: 't_' + Date.now(),
+                title: item.text,
+                quadrant: 'do',
+                duration: '1h',
+                tag: 'Strategy',
+                completed: false
+            });
+
+            appState.brainDump = appState.brainDump.filter(b => b.id !== id);
+            saveState();
+            showToast('Promoted to Q1: Do First', 'success');
+        }
+
+        function deleteBrainDumpItem(id) {
+            appState.brainDump = appState.brainDump.filter(b => b.id !== id);
+            saveState();
+        }
+
+        function renderBrainDump() {
+            const list = document.getElementById('brain-dump-list');
+            document.getElementById('inbox-count').textContent = appState.brainDump.length;
+
+            if (!appState.brainDump.length) {
+                list.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Inbox zero achieved. Mind clear.</p>`;
+                return;
+            }
+
+            list.innerHTML = appState.brainDump.map(item => `
+                <div class="group flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-xs">
+                    <div class="min-w-0">
+                        <p class="font-medium text-slate-800 dark:text-slate-200 truncate">${escapeHtml(item.text)}</p>
+                        <span class="text-[10px] font-mono text-slate-400">Captured ${item.createdAt}</span>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button onclick="promoteBrainDumpToMatrix('${item.id}')" title="Promote to Eisenhower Matrix" class="px-2 py-1 rounded-lg bg-brand-50 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 hover:bg-brand-100 font-semibold text-[11px] transition-colors">
+                            Triage →
+                        </button>
+                        <button onclick="deleteBrainDumpItem('${item.id}')" title="Dismiss" class="p-1 text-slate-400 hover:text-rose-500">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * WEEKLY ENERGY & DEEP WORK ANALYTICS SVG VISUALIZATION
+         */
+        function renderCharts() {
+            const data = appState.weeklyAnalytics;
+            const maxVal = 8; // 8 hours scale
+
+            const barsHtml = data.map(d => {
+                const deepPct = Math.round((d.deep / maxVal) * 100);
+                const shallowPct = Math.round((d.shallow / maxVal) * 100);
+                return `
+                    <div class="flex-1 flex flex-col items-center gap-2">
+                        <div class="w-full h-36 flex items-end justify-center gap-1.5 px-1">
+                            <!-- Deep Work Bar -->
+                            <div class="w-3 sm:w-4 bg-brand-600 rounded-t-md transition-all duration-500 relative group" style="height: ${deepPct}%">
+                                <span class="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-mono px-1.5 py-0.5 rounded pointer-events-none">${d.deep}h</span>
+                            </div>
+                            <!-- Shallow Work Bar -->
+                            <div class="w-3 sm:w-4 bg-slate-300 dark:bg-slate-700 rounded-t-md transition-all duration-500 relative group" style="height: ${shallowPct}%">
+                                <span class="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-mono px-1.5 py-0.5 rounded pointer-events-none">${d.shallow}h</span>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400">${d.day}</span>
+                    </div>
+                `;
+            }).join('');
+
+            const chartMarkup = `
+                <div class="flex items-end justify-between gap-2 pt-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+                    ${barsHtml}
+                </div>
+            `;
+
+            document.getElementById('overview-chart-container').innerHTML = chartMarkup;
+            document.getElementById('analytics-full-chart').innerHTML = chartMarkup;
+
+            // Breakdown bars in Analytics View
+            const breakdownEl = document.getElementById('analytics-breakdown');
+            const categories = [
+                { label: 'Deep Work (Maker Time)', hours: 3.5, color: 'bg-brand-600', pct: 54 },
+                { label: 'Client & Leadership Meetings', hours: 2.0, color: 'bg-amber-500', pct: 31 },
+                { label: 'Admin & Inbox Triage', hours: 1.0, color: 'bg-slate-400', pct: 15 }
+            ];
+            breakdownEl.innerHTML = categories.map(c => `
+                <div>
+                    <div class="flex justify-between text-xs font-medium mb-1.5">
+                        <span>${c.label}</span>
+                        <span class="font-mono">${c.hours}h (${c.pct}%)</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div class="${c.color} h-full rounded-full" style="width: ${c.pct}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * UTILITIES: TOAST & HTML ESCAPING
+         */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const icon = type === 'success' ? 'ph-fill ph-check-circle text-emerald-400' : 'ph-fill ph-info text-brand-400';
+
+            toast.className = 'pointer-events-auto flex items-center gap-2.5 bg-slate-900 dark:bg-slate-800 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-xl border border-slate-700/80 transition-all duration-300 translate-y-2 opacity-0';
+            toast.innerHTML = `<i class="${icon} text-base"></i><span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
